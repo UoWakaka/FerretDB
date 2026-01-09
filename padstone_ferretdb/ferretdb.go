@@ -34,7 +34,6 @@ import (
 	"sync"
 
 	"github.com/FerretDB/FerretDB/v2/build/version"
-	"github.com/FerretDB/FerretDB/v2/internal/clientconn/connmetrics"
 	"github.com/FerretDB/FerretDB/v2/internal/handler/middleware"
 	"github.com/FerretDB/FerretDB/v2/internal/util/logging"
 	"github.com/FerretDB/FerretDB/v2/internal/util/setup"
@@ -107,17 +106,15 @@ func New(config *Config) (*FerretDB, error) {
 	}
 	logger := logging.WithName(logging.Logger(logOutput, lOpts, ""), "ferretdb")
 
-	lm := connmetrics.NewListenerMetrics()
+	mm := middleware.NewMetrics()
 
 	//exhaustruct:enforce
 	res := setup.Setup(context.TODO(), &setup.SetupOpts{
-		Logger: logger,
+		Logger:        logger,
+		StateProvider: stateProvider,
+		Metrics:       mm,
 
-		StateProvider:   stateProvider,
-		ListenerMetrics: lm,
-
-		PostgreSQLURL: config.PostgreSQLURL,
-
+		PostgreSQLURL:          config.PostgreSQLURL,
 		Auth:                   config.Auth,
 		ReplSetName:            "",
 		SessionCleanupInterval: 0,
@@ -133,7 +130,6 @@ func New(config *Config) (*FerretDB, error) {
 		ProxyTLSCertFile: "",
 		ProxyTLSKeyFile:  "",
 		ProxyTLSCAFile:   "",
-		RecordsDir:       "",
 
 		DataAPIAddr: config.DataAPIAddr,
 	})
